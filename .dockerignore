@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.github
+
+# Environment and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# IDE
+.idea
+.vscode
+**/.idea
+**/.vscode
+
+# Backend dependencies and generated files
+apps/api/vendor
+apps/api/node_modules
+apps/api/storage/logs
+apps/api/storage/framework/cache
+apps/api/storage/framework/sessions
+apps/api/storage/framework/views
+
+# Frontend dependencies and artifacts
+apps/web/node_modules
+apps/web/dist
+apps/web/coverage
+apps/web/playwright-report
+apps/web/test-results
+
+# Documentation is not needed for image builds
+docs
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store.git
+.github
+.idea
+.vscode
+
+.env
+**/.env
+
+apps/api/vendor
+apps/api/storage/logs/*
+apps/api/node_modules
+
+apps/web/node_modules
+apps/web/dist
+apps/web/playwright-report
+apps/web/test-results

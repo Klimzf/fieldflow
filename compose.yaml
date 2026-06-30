@@ -1,0 +1,156 @@
+name: fieldflow
+
+x-php-service: &php-service
+  build:
+    context: .
+    dockerfile: infrastructure/docker/php/Dockerfile
+    args:
+      UID: ${UID:-1000}
+      GID: ${GID:-1000}
+  image: fieldflow-php:dev
+  working_dir: /var/www/api
+  volumes:
+    - ./apps/api:/var/www/api
+  restart: unless-stopped
+  networks:
+    - fieldflow
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  api:
+    <<: *php-service
+    expose:
+      - "9000"
+
+  queue:
+    <<: *php-service
+    command:
+      - php
+      - artisan
+      - queue:work
+      - --sleep=1
+      - --tries=3
+      - --timeout=90
+
+  scheduler:
+    <<: *php-service
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          php artisan schedule:run --verbose --no-interaction
+          sleep 60
+        done
+
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/node/Dockerfile
+    image: fieldflow-web:dev
+    working_dir: /app
+    volumes:
+      - ./apps/web:/app
+      - web_node_modules:/app/node_modules
+    expose:
+      - "5173"
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./apps/api:/var/www/api:ro
+      - ./infrastructure/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fieldflow}
+      POSTGRES_USER: ${POSTGRES_USER:-fieldflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fieldflow_dev}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-fieldflow} -d ${POSTGRES_DB:-fieldflow}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+  redis:
+    image: redis:8-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-fieldflow}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-fieldflow_minio_dev}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+    networks:
+      - fieldflow
+
+networks:
+  fieldflow:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  web_node_modules:

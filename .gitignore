@@ -1,0 +1,53 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!apps/api/.env.example
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker local overrides
+compose.override.yaml
+docker-compose.override.yml
+
+# Laravel dependencies
+apps/api/vendor/
+apps/api/node_modules/
+
+# Laravel generated files
+apps/api/bootstrap/cache/*.php
+apps/api/storage/logs/*
+apps/api/storage/framework/cache/*
+apps/api/storage/framework/sessions/*
+apps/api/storage/framework/views/*
+
+# Laravel testing
+apps/api/.phpunit.result.cache
+apps/api/coverage/
+
+# Vue dependencies
+apps/web/node_modules/
+
+# Vue build output
+apps/web/dist/
+
+# Frontend testing
+apps/web/coverage/
+apps/web/playwright-report/
+apps/web/test-results/
+
+# Temporary files
+*.tmp
+*.temp
