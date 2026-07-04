@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-// See here how to get started:
-// https://playwright.dev/docs/intro
-test('visits the app root url', async ({ page }) => {
+test('opens the FieldFlow application', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('FieldFlow')
+
+  await expect(page).toHaveTitle(/FieldFlow/)
+  await expect(page.locator('#app')).toBeVisible()
+  await expect(page.locator('#app')).not.toBeEmpty()
 })
