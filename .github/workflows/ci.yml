@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+      - "refactor/**"
+      - "chore/**"
+  pull_request:
+    branches:
+      - main
+  
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run: 
+        working-directory: apps/api
+    
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: fieldflow
+          POSTGRES_USER: fieldflow
+          POSTGRES_PASSWORD: fieldflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fieldflow -d fieldflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+  
+    env:
+      APP_ENV: testing
+      APP_DEBUG: false
+
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: fieldflow
+      DB_USERNAME: fieldflow
+      DB_PASSWORD: fieldflow_test
+
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, int1, mbstring, pcntl, pdo_pgsql, redis, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate Composer files
+        run: composer validate --no-check-publish
+
+      - name: Install Composer dependecies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan optimize:clear
+
+      - name: Check PHP code style
+        run: ./vendor/bin/pint --test
+
+      - name: Run PostgreSQL migrations
+        run: php artisan migrate --force
+
+      - name: Check application health
+        run: |
+          php artisan serve \
+            --host=127.0.0.1 \
+            --port=8000 \
+            > /tmp/fieldflow-api.log 2>&1 &
+
+          SERVER_PID=$!
+          trap 'kill ${SERVER_PID} 2>/dev/null || true' EXIT
+
+          for attempt in {1..20}; do
+            if curl \
+              --fail \
+              --silent \
+              http://127.0.0.1:8000/api/health \
+              > /tmp/fieldflow-health.json
+            then
+              cat /tmp/fieldflow-heath.json
+              exit 0
+            fi
+
+            sleep 1
+          done
+
+          echo "Application health check failed."
+          cat /tmp/fieldflow-api.log
+          exit 1
+
+      - name: Run backend tests
+        run: php artisan test
+
+      - name: Check Composer security advisories
+        run: composer audit --locked --no-interaction
+  
+  frontend: 
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install npm dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npx esling .
+
+      - name: Check TypeScript
+        run: npm run type-check
+
+      - name: Run frontend unit tests
+        run: npm run build
+
+  frontend-e2e:
+    name: Frontend E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - frontend
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps: 
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Installl Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npm run test:e2e -- --project=chromium
