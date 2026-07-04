@@ -105,23 +105,25 @@ jobs:
         run: php artisan migrate --force
 
       - name: Check application health
+        shell: bash
         run: |
-          php artisan serve \
-            --host=127.0.0.1 \
-            --port=8000 \
-            > /tmp/fieldflow-api.log 2>&1 &
+          set -Eeuo pipefail
 
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/fieldflow-api.log 2>&1 &
           SERVER_PID=$!
-          trap 'kill ${SERVER_PID} 2>/dev/null || true' EXIT
 
-          for attempt in {1..20}; do
-            if curl \
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 20); do
+            echo "Health check attempt ${attempt}/20"
+
+            if RESPONSE=$(curl \
               --fail \
               --silent \
+              --show-error \
               http://127.0.0.1:8000/api/health \
-              > /tmp/fieldflow-health.json
-            then
-              cat /tmp/fieldflow-heath.json
+              2> /tmp/fieldflow-curl.log); then
+              echo "${RESPONSE}"
               exit 0
             fi
 
@@ -129,7 +131,13 @@ jobs:
           done
 
           echo "Application health check failed."
-          cat /tmp/fieldflow-api.log
+
+          echo "Laravel server log:"
+          cat /tmp/fieldflow-api.log || true
+
+          echo "Curl error:"
+          cat /tmp/fieldflow-curl.log || true
+
           exit 1
 
       - name: Run backend tests
