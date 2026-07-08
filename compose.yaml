@@ -8,6 +8,7 @@ x-php-service: &php-service
       UID: ${UID:-1000}
       GID: ${GID:-1000}
   image: fieldflow-php:dev
+  user: "${UID:-1000}:${GID:-1000}"
   working_dir: /var/www/api
   volumes:
     - ./apps/api:/var/www/api
