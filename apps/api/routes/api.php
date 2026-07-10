@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\OrganizationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)
@@ -28,3 +29,8 @@ Route::prefix('auth')
                 ->name('logout');
         });
     });
+
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::apiResource('organizations', OrganizationController::class)
+        ->except(['destroy']);
+});
