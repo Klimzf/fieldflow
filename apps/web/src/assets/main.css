@@ -149,3 +149,65 @@ button:disabled {
   background: #ffffff;
   box-shadow: 0 20px 60px rgb(15 23 42 / 8%);
 }
+
+.page {
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.card {
+  max-width: 900px;
+  padding: 32px;
+  border: 1px solid #dbe3ef;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgb(15 23 42 / 8%);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: #ffffff;
+  background: #2563eb;
+  font-weight: 700;
+}
+
+.empty-state {
+  display: grid;
+  gap: 12px;
+}
+
+.organization-list {
+  display: grid;
+  gap: 16px;
+}
+
+.organization-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px;
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+}
+
+.organization-item h2 {
+  margin-bottom: 8px;
+}
+
+.organization-item p {
+  margin-bottom: 4px;
+  color: #667085;
+}
