@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useOrganizationsStore } from '@/stores/organizations'
 
 const router = useRouter()
 const auth = useAuthStore()
+const organizationsStore = useOrganizationsStore()
+
+onMounted(async () => {
+  await organizationsStore.fetchOrganizations()
+})
 
 async function logout(): Promise<void> {
   await auth.logout()
@@ -25,10 +32,24 @@ async function logout(): Promise<void> {
     <section class="dashboard-card">
       <h2>Добро пожаловать, {{ auth.user?.name }}</h2>
       <p>Email: {{ auth.user?.email }}</p>
-      <p>
-        Это первая защищённая страница FieldFlow. Позже здесь появятся заявки, клиенты, инженеры и
-        аналитика.
-      </p>
+
+      <div v-if="organizationsStore.loading">
+        <p>Загружаем организации...</p>
+      </div>
+
+      <div v-else-if="organizationsStore.organizations.length === 0">
+        <p>У вас пока нет организаций.</p>
+        <RouterLink class="button" to="/organizations/new">Создать первую организацию</RouterLink>
+      </div>
+
+      <div v-else>
+        <p>
+          Активная организация:
+          <strong>{{ organizationsStore.activeOrganization?.name }}</strong>
+        </p>
+
+        <RouterLink class="button" to="/organizations">Управлять организациями</RouterLink>
+      </div>
     </section>
   </main>
 </template>
