@@ -9,6 +9,8 @@ use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
+use App\Models\User;
+use App\Services\OrganizationAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,6 +19,10 @@ use Illuminate\Support\Facades\DB;
 
 final class OrganizationController extends Controller
 {
+    public function __construct(
+        private readonly OrganizationAccessService $organizationAccess,
+    ) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $organizations = $request
@@ -51,8 +57,11 @@ final class OrganizationController extends Controller
 
     public function show(Request $request, Organization $organization): OrganizationResource
     {
+        /** @var User $user */
+        $user = $request->user();
+
         return new OrganizationResource(
-            $this->findOrganizationsForUser($request, $organization)
+            $this->organizationAccess->findForUser($user, $organization)
         );
     }
 
@@ -60,24 +69,15 @@ final class OrganizationController extends Controller
         UpdateOrganizationRequest $request,
         Organization $organization,
     ): OrganizationResource {
-        $organization = $this->findOrganizationsForUser($request, $organization);
+        /** @var User $user */
+        $user = $request->user();
 
-        abort_if(
-            ! in_array($organization->pivot->role, ['owner', 'admin'], true),
-            Response::HTTP_FORBIDDEN
-        );
+        $organization = $this->organizationAccess->findForUser($user, $organization);
+
+        $this->organizationAccess->assertCanManage($organization);
 
         $organization->update($request->validated());
 
         return new OrganizationResource($organization->refresh());
-    }
-
-    private function findOrganizationsForUser(Request $request, Organization $organization): Organization
-    {
-        return $request
-            ->user()
-            ->organizations()
-            ->whereKey($organization->id)
-            ->firstOrFail();
     }
 }
