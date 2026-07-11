@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
 use Illuminate\Support\Facades\Route;
@@ -33,4 +34,16 @@ Route::prefix('auth')
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::apiResource('organizations', OrganizationController::class)
         ->except(['destroy']);
+
+    Route::get('/organizations/{organization}/clients', [ClientController::class, 'index'])
+        ->name('organizations.clients.index');
+
+    Route::post('/organizations/{organization}/clients', [ClientController::class, 'store'])
+        ->name('organization.clients.store');
+
+    Route::get('/clients/{client}', [ClientController::class, 'show'])
+        ->name('clients.show');
+
+    Route::patch('/clients/{client}', [ClientController::class, 'update'])
+        ->name('clients.update');
 });
