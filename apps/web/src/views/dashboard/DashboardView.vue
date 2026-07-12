@@ -49,6 +49,16 @@ async function logout(): Promise<void> {
         </p>
 
         <RouterLink class="button" to="/organizations">Управлять организациями</RouterLink>
+        <RouterLink
+          v-if="organizationsStore.activeOrganization"
+          class="button"
+          :to="{
+            name: 'organization.clients',
+            params: { organizationId: organizationsStore.activeOrganization.id },
+          }"
+        >
+          Клиенты организации
+        </RouterLink>
       </div>
     </section>
   </main>

@@ -1,12 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { http } from '@/shared/api/http'
-import type {
-  ApiResource,
-  ApiResourceCollection,
-  Organization,
-  OrganizationPayload,
-} from '@/shared/types/organization'
+import type { Organization, OrganizationPayload } from '@/shared/types/organization'
+import type { ApiResource, ApiResourceCollection } from '@/shared/types/api'
 
 export const useOrganizationsStore = defineStore('organizations', () => {
   const organizations = ref<Organization[]>([])

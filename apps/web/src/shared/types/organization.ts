@@ -11,11 +11,3 @@ export interface OrganizationPayload {
   name: string
   slug?: string
 }
-
-export interface ApiResource<T> {
-  data: T
-}
-
-export interface ApiResourceCollection<T> {
-  data: T[]
-}
