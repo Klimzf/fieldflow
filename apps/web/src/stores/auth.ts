@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { csrf, http } from '@/shared/api/http'
-import type { ApiResource, User } from '@/shared/types/user'
+import type { User } from '@/shared/types/user'
+import type { ApiResource } from '@/shared/types/api'
 
 interface LoginPayload {
   email: string

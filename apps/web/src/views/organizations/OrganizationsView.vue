@@ -42,11 +42,23 @@ onMounted(async () => {
             <p>Роль: {{ organization.role }}</p>
           </div>
 
-          <button type="button" @click="organizationsStore.setActiveOrganization(organization.id)">
-            {{
-              organizationsStore.activeOrganizationId === organization.id ? 'Активная' : 'Выбрать'
-            }}
-          </button>
+          <div class="organization-actions">
+            <RouterLink
+              class="button"
+              :to="{ name: 'organization.clients', params: { organizationId: organization.id } }"
+            >
+              Клиенты
+            </RouterLink>
+
+            <button
+              type="button"
+              @click="organizationsStore.setActiveOrganization(organization.id)"
+            >
+              {{
+                organizationsStore.activeOrganizationId === organization.id ? 'Активная' : 'Выбрать'
+              }}
+            </button>
+          </div>
         </article>
       </div>
     </section>

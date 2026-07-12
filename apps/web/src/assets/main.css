@@ -211,3 +211,17 @@ button:disabled {
   margin-bottom: 4px;
   color: #667085;
 }
+
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ccd5e1;
+  border-radius: 12px;
+  resize: vertical;
+}
+
+.organization-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
