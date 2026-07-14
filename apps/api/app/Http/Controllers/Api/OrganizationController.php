@@ -10,7 +10,7 @@ use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
 use App\Models\User;
-use App\Services\OrganizationAccessService;
+use App\Services\TenantAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 final class OrganizationController extends Controller
 {
     public function __construct(
-        private readonly OrganizationAccessService $organizationAccess,
+        private readonly TenantAccessService $tenantAccess,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -61,7 +61,7 @@ final class OrganizationController extends Controller
         $user = $request->user();
 
         return new OrganizationResource(
-            $this->organizationAccess->findForUser($user, $organization)
+            $this->tenantAccess->findOrganizationForUser($user, $organization)
         );
     }
 
@@ -72,9 +72,9 @@ final class OrganizationController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $organization = $this->organizationAccess->findForUser($user, $organization);
+        $organization = $this->tenantAccess->findOrganizationForUser($user, $organization);
 
-        $this->organizationAccess->assertCanManage($organization);
+        $this->tenantAccess->assertCanManageOrganization($organization);
 
         $organization->update($request->validated());
 

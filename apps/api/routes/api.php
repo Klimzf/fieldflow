@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\SiteController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)
@@ -46,4 +47,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::patch('/clients/{client}', [ClientController::class, 'update'])
         ->name('clients.update');
+
+    Route::apiResource('clients.sites', SiteController::class)
+        ->shallow()
+        ->only(['index', 'store', 'show', 'update']);
 });

@@ -11,7 +11,7 @@ use App\Http\Resources\ClientResource;
 use App\Models\Client;
 use App\Models\Organization;
 use App\Models\User;
-use App\Services\OrganizationAccessService;
+use App\Services\TenantAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -20,7 +20,7 @@ use Illuminate\Http\Response;
 final class ClientController extends Controller
 {
     public function __construct(
-        private readonly OrganizationAccessService $organizationAccess,
+        private readonly TenantAccessService $tenantAccess,
     ) {}
 
     public function index(Request $request, Organization $organization): AnonymousResourceCollection
@@ -28,7 +28,7 @@ final class ClientController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $organization = $this->organizationAccess->findForUser($user, $organization);
+        $organization = $this->tenantAccess->findOrganizationForUser($user, $organization);
 
         $clients = $organization
             ->clients()
@@ -43,9 +43,9 @@ final class ClientController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $organization = $this->organizationAccess->findForUser($user, $organization);
+        $organization = $this->tenantAccess->findOrganizationForUser($user, $organization);
 
-        $this->organizationAccess->assertCanManage($organization);
+        $this->tenantAccess->assertCanManageOrganization($organization);
 
         $client = $organization
             ->clients()
@@ -70,9 +70,9 @@ final class ClientController extends Controller
 
         $client = $this->findClientForUser($request, $client);
 
-        $organization = $this->organizationAccess->findForUser($user, $client->organization);
+        $organization = $this->tenantAccess->findOrganizationForUser($user, $client->organization);
 
-        $this->organizationAccess->assertCanManage($organization);
+        $this->tenantAccess->assertCanManageOrganization($organization);
 
         $client->update($request->validated());
 
