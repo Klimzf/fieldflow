@@ -4,24 +4,28 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Database\Factories\SiteFactory;
+use Database\Factories\EquipmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-final class Site extends Model
+final class Equipment extends Model
 {
-    /** @use HasFactory<SiteFactory> */
+    /** @use HasFactory<EquipmentFactory> */
     use HasFactory;
+
+    protected $table = 'equipment';
 
     protected $fillable = [
         'organization_id',
         'client_id',
+        'site_id',
         'name',
-        'address',
-        'contact_name',
-        'contact_phone',
+        'type',
+        'manufacturer',
+        'model',
+        'serial_number',
+        'installed_at',
         'notes',
     ];
 
@@ -42,10 +46,10 @@ final class Site extends Model
     }
 
     /**
-     * @return HasMany<Equipment, $this>
+     * @return BelongsTo<Site, $this>
      */
-    public function equipment(): HasMany
+    public function site(): BelongsTo
     {
-        return $this->hasMany(Equipment::class);
+        return $this->belongsTo(Site::class);
     }
 }

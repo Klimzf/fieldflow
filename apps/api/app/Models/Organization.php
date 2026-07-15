@@ -44,4 +44,12 @@ final class Organization extends Model
     {
         return $this->hasMany(Site::class);
     }
+
+    /**
+     * @return HasMany<Equipment, $this>
+     */
+    public function equipment(): HasMany
+    {
+        return $this->hasMany(Equipment::class);
+    }
 }
