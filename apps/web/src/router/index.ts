@@ -7,6 +7,8 @@ import CreateOrganizationView from '@/views/organizations/CreateOrganizationView
 import OrganizationsView from '@/views/organizations/OrganizationsView.vue'
 import ClientsView from '@/views/clients/ClientsView.vue'
 import CreateClientView from '@/views/clients/CreateClientView.vue'
+import CreateSiteView from '@/views/sites/CreateSiteView.vue'
+import SitesView from '@/views/sites/SitesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -67,6 +69,22 @@ const router = createRouter({
       path: '/organizations/:organizationId/clients/new',
       name: 'organization.clients.create',
       component: CreateClientView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites',
+      name: 'client.sites',
+      component: SitesView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites/new',
+      name: 'client.sites.create',
+      component: CreateSiteView,
       meta: {
         requiresAuth: true,
       },
