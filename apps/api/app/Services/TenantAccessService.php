@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Client;
+use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 
 final class TenantAccessService
 {
@@ -44,11 +46,31 @@ final class TenantAccessService
             ->firstOrFail();
     }
 
+    public function findEquipmentForUser(User $user, Equipment $equipment): Equipment
+    {
+        $organizationIds = $this->organizationIdsForUser($user);
+
+        return Equipment::query()
+            ->whereIn('organization_id', $organizationIds)
+            ->whereKey($equipment->id)
+            ->firstOrFail();
+    }
+
     public function assertCanManageOrganization(Organization $organization): void
     {
         abort_if(
             ! in_array($organization->pivot->role, ['owner', 'admin'], true),
             Response::HTTP_FORBIDDEN
         );
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    private function organizationIdsForUser(User $user)
+    {
+        return $user
+            ->organizations()
+            ->pluck('organizations.id');
     }
 }

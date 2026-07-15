@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\SiteController;
@@ -49,6 +50,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->name('clients.update');
 
     Route::apiResource('clients.sites', SiteController::class)
+        ->shallow()
+        ->only(['index', 'store', 'show', 'update']);
+
+    Route::apiResource('sites.equipment', EquipmentController::class)
         ->shallow()
         ->only(['index', 'store', 'show', 'update']);
 });
