@@ -48,4 +48,12 @@ final class Site extends Model
     {
         return $this->hasMany(Equipment::class);
     }
+
+    /**
+     * @return HasMany<WorkOrder, $this>
+     */
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(WorkOrder::class);
+    }
 }
