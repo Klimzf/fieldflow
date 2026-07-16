@@ -47,6 +47,21 @@ onMounted(async () => {
             <p v-if="site.contact_phone">Телефон: {{ site.contact_phone }}</p>
             <p v-if="site.notes">Заметки: {{ site.notes }}</p>
           </div>
+
+          <div class="organization-actions">
+            <RouterLink
+              class="button"
+              :to="{
+                name: 'site.equipment',
+                params: {
+                  clientId,
+                  siteId: site.id,
+                },
+              }"
+            >
+              Оборудование
+            </RouterLink>
+          </div>
         </article>
       </div>
     </section>

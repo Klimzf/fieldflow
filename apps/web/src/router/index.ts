@@ -9,6 +9,8 @@ import ClientsView from '@/views/clients/ClientsView.vue'
 import CreateClientView from '@/views/clients/CreateClientView.vue'
 import CreateSiteView from '@/views/sites/CreateSiteView.vue'
 import SitesView from '@/views/sites/SitesView.vue'
+import CreateEquipmentView from '@/views/equipment/CreateEquipmentView.vue'
+import EquipmentView from '@/views/equipment/EquipmentView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -85,6 +87,22 @@ const router = createRouter({
       path: '/clients/:clientId/sites/new',
       name: 'client.sites.create',
       component: CreateSiteView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites/:siteId/equipment',
+      name: 'site.equipment',
+      component: EquipmentView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites/:siteId/equipment/new',
+      name: 'site.equipment.create',
+      component: CreateEquipmentView,
       meta: {
         requiresAuth: true,
       },
