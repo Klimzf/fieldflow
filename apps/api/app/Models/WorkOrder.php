@@ -4,31 +4,39 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Database\Factories\EquipmentFactory;
+use Database\Factories\WorkOrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-final class Equipment extends Model
+final class WorkOrder extends Model
 {
-    /** @use HasFactory<EquipmentFactory> */
+    /** @use HasFactory<WorkOrderFactory> */
     use HasFactory;
-
-    protected $table = 'equipment';
 
     protected $fillable = [
         'organization_id',
         'client_id',
         'site_id',
-        'name',
-        'type',
-        'manufacturer',
-        'model',
-        'serial_number',
-        'installed_at',
-        'notes',
+        'equipment_id',
+        'title',
+        'description',
+        'status',
+        'priority',
+        'scheduled_at',
+        'completed_at',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'scheduled_at' => 'datetime',
+            'completed_at' => 'datetime',
+        ];
+    }
 
     /**
      * @return BelongsTo<Organization, $this>
@@ -55,10 +63,10 @@ final class Equipment extends Model
     }
 
     /**
-     * @return HasMany<WorkOrder, $this>
+     * @return BelongsTo<Equipment, $this>
      */
-    public function workOrders(): HasMany
+    public function equipment(): BelongsTo
     {
-        return $this->hasMany(WorkOrder::class);
+        return $this->belongsTo(Equipment::class);
     }
 }

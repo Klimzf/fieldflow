@@ -9,6 +9,7 @@ use App\Models\Equipment;
 use App\Models\Organization;
 use App\Models\Site;
 use App\Models\User;
+use App\Models\WorkOrder;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
@@ -62,6 +63,16 @@ final class TenantAccessService
             ! in_array($organization->pivot->role, ['owner', 'admin'], true),
             Response::HTTP_FORBIDDEN
         );
+    }
+
+    public function findWorkOrderForUser(User $user, WorkOrder $workOrder): WorkOrder
+    {
+        $organizationIds = $this->organizationIdsForUser($user);
+
+        return WorkOrder::query()
+            ->whereIn('organization_id', $organizationIds)
+            ->whereKey($workOrder->id)
+            ->firstOrFail();
     }
 
     /**

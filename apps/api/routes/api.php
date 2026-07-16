@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\Api\WorkOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)
@@ -54,6 +55,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->only(['index', 'store', 'show', 'update']);
 
     Route::apiResource('sites.equipment', EquipmentController::class)
+        ->shallow()
+        ->only(['index', 'store', 'show', 'update']);
+
+    Route::apiResource('sites.work-orders', WorkOrderController::class)
         ->shallow()
         ->only(['index', 'store', 'show', 'update']);
 });
