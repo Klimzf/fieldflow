@@ -68,6 +68,13 @@ final class WorkOrderController extends Controller
                 'client_id' => $site->client_id,
             ]);
 
+        $workOrder->updates()->create([
+            'organization_id' => $workOrder->organization_id,
+            'user_id' => $user->id,
+            'type' => 'created',
+            'new_status' => $workOrder->status,
+        ]);
+
         return (new WorkOrderResource($workOrder))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
@@ -104,7 +111,22 @@ final class WorkOrderController extends Controller
                 ->firstOrFail();
         }
 
+        $oldStatus = $workOrder->status;
+
         $workOrder->update($validated);
+
+        if (
+            array_key_exists('status', $validated)
+            && $validated['status'] !== $oldStatus
+        ) {
+            $workOrder->updates()->create([
+                'organization_id' => $workOrder->organization_id,
+                'user_id' => $user->id,
+                'type' => 'status_changed',
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status'],
+            ]);
+        }
 
         return new WorkOrderResource($workOrder->refresh());
     }

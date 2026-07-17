@@ -8,6 +8,7 @@ use Database\Factories\WorkOrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class WorkOrder extends Model
 {
@@ -68,5 +69,13 @@ final class WorkOrder extends Model
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(Equipment::class);
+    }
+
+    /**
+     * @return HasMany<WorkOrderUpdate, $this>
+     */
+    public function updates(): HasMany
+    {
+        return $this->hasMany(WorkOrderUpdate::class);
     }
 }
