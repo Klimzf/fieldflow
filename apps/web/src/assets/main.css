@@ -35,6 +35,13 @@ a {
   text-decoration: none;
 }
 
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ccd5e1;
+  border-radius: 12px;
+}
+
 .auth-page {
   display: grid;
   min-height: 100vh;

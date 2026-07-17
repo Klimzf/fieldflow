@@ -61,6 +61,19 @@ onMounted(async () => {
             >
               Оборудование
             </RouterLink>
+
+            <RouterLink
+              class="button"
+              :to="{
+                name: 'site.work-orders',
+                params: {
+                  clientId,
+                  siteId: site.id,
+                },
+              }"
+            >
+              Заявки
+            </RouterLink>
           </div>
         </article>
       </div>
