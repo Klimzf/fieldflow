@@ -11,6 +11,8 @@ import CreateSiteView from '@/views/sites/CreateSiteView.vue'
 import SitesView from '@/views/sites/SitesView.vue'
 import CreateEquipmentView from '@/views/equipment/CreateEquipmentView.vue'
 import EquipmentView from '@/views/equipment/EquipmentView.vue'
+import CreateWorkOrderView from '@/views/work-orders/CreateWorkOrderView.vue'
+import WorkOrdersView from '@/views/work-orders/WorkOrdersView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -103,6 +105,22 @@ const router = createRouter({
       path: '/clients/:clientId/sites/:siteId/equipment/new',
       name: 'site.equipment.create',
       component: CreateEquipmentView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites/:siteId/work-orders',
+      name: 'site.work-orders',
+      component: WorkOrdersView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/clients/:clientId/sites/:siteId/work-orders/new',
+      name: 'site.work-orders.create',
+      component: CreateWorkOrderView,
       meta: {
         requiresAuth: true,
       },
