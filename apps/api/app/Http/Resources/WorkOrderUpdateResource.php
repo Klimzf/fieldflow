@@ -25,7 +25,7 @@ final class WorkOrderUpdateResource extends JsonResource
             'message' => $this->message,
             'old_status' => $this->old_status,
             'new_status' => $this->new_status,
-            'user' => $this->whenLoaded('user', fn (): array => [
+            'user' => $this->whenLoaded('user', fn (): ?array => $this->user === null ? null : [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
             ]),

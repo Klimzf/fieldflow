@@ -5,6 +5,7 @@ import { getValidationError } from '@/shared/api/errors'
 import { useEquipmentStore } from '@/stores/equipment'
 import { useWorkOrdersStore } from '@/stores/work-orders'
 import type { WorkOrderPriority, WorkOrderStatus } from '@/shared/types/work-order'
+import { WORK_ORDER_PRIORITIES, WORK_ORDER_STATUSES } from '@/shared/constants/work-orders'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,20 +14,6 @@ const equipmentStore = useEquipmentStore()
 
 const clientId = computed(() => Number(route.params.clientId))
 const siteId = computed(() => Number(route.params.siteId))
-
-const statuses: Array<{ value: WorkOrderStatus; label: string }> = [
-  { value: 'new', label: 'Новая' },
-  { value: 'in_progress', label: 'В работе' },
-  { value: 'completed', label: 'Выполнена' },
-  { value: 'cancelled', label: 'Отменена' },
-]
-
-const priorities: Array<{ value: WorkOrderPriority; label: string }> = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'medium', label: 'Средний' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' },
-]
 
 const form = reactive({
   title: '',
@@ -118,16 +105,22 @@ async function submit(): Promise<void> {
         <label>
           Статус
           <select v-model="form.status">
-            <option v-for="status in statuses" :key="status.value" :value="status.value">
-              {{ status.label }}
-            </option>
+            <option
+              v-for="status in WORK_ORDER_STATUSES"
+              :key="status.value"
+              :value="status.value"
+            ></option>
           </select>
         </label>
 
         <label>
           Приоритет
           <select v-model="form.priority">
-            <option v-for="priority in priorities" :key="priority.value" :value="priority.value">
+            <option
+              v-for="priority in WORK_ORDER_PRIORITIES"
+              :key="priority.value"
+              :value="priority.value"
+            >
               {{ priority.label }}
             </option>
           </select>

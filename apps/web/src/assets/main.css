@@ -232,3 +232,27 @@ textarea {
   align-items: center;
   gap: 12px;
 }
+
+.compact-form {
+  margin-top: 20px;
+}
+
+.timeline {
+  display: grid;
+  gap: 14px;
+}
+
+.timeline-item {
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.timeline-item p {
+  margin: 0 0 8px;
+}
+
+.timeline-item small {
+  color: #64748b;
+}

@@ -6,6 +6,7 @@ import type { WorkOrder, WorkOrderPayload } from '@/shared/types/work-order'
 
 export const useWorkOrdersStore = defineStore('work-orders', () => {
   const workOrders = ref<WorkOrder[]>([])
+  const currentWorkOrder = ref<WorkOrder | null>(null)
   const loading = ref(false)
 
   async function fetchWorkOrders(siteId: number): Promise<void> {
@@ -17,6 +18,18 @@ export const useWorkOrdersStore = defineStore('work-orders', () => {
       )
 
       workOrders.value = response.data.data
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchWorkOrder(workOrderId: number): Promise<void> {
+    loading.value = true
+
+    try {
+      const response = await http.get<ApiResource<WorkOrder>>(`/api/work-orders/${workOrderId}`)
+
+      currentWorkOrder.value = response.data.data
     } finally {
       loading.value = false
     }
@@ -41,10 +54,39 @@ export const useWorkOrdersStore = defineStore('work-orders', () => {
     }
   }
 
+  async function updateWorkOrder(
+    workOrderId: number,
+    payload: Partial<WorkOrderPayload>,
+  ): Promise<WorkOrder> {
+    loading.value = true
+
+    try {
+      const response = await http.patch<ApiResource<WorkOrder>>(
+        `/api/work-orders/${workOrderId}`,
+        payload,
+      )
+
+      const workOrder = response.data.data
+
+      currentWorkOrder.value = workOrder
+
+      workOrders.value = workOrders.value.map((item) =>
+        item.id === workOrder.id ? workOrder : item,
+      )
+
+      return workOrder
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     workOrders,
+    currentWorkOrder,
     loading,
     fetchWorkOrders,
+    fetchWorkOrder,
     createWorkOrder,
+    updateWorkOrder,
   }
 })
