@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\Site;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Models\WorkOrderAssignment;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
@@ -72,6 +73,18 @@ final class TenantAccessService
         return WorkOrder::query()
             ->whereIn('organization_id', $organizationIds)
             ->whereKey($workOrder->id)
+            ->firstOrFail();
+    }
+
+    public function findWorkOrderAssignmentForUser(
+        User $user,
+        WorkOrderAssignment $workOrderAssignment,
+    ): WorkOrderAssignment {
+        $organizationIds = $this->organizationIdsForUser($user);
+
+        return WorkOrderAssignment::query()
+            ->whereIn('organization_id', $organizationIds)
+            ->whereKey($workOrderAssignment->id)
             ->firstOrFail();
     }
 

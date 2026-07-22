@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\Api\WorkOrderAssignableUserController;
+use App\Http\Controllers\Api\WorkOrderAssignmentController;
 use App\Http\Controllers\Api\WorkOrderController;
 use App\Http\Controllers\Api\WorkOrderUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -65,4 +67,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::apiResource('work-orders.updates', WorkOrderUpdateController::class)
         ->only(['index', 'store']);
+
+    Route::get('work-orders/{workOrder}/assignable-users', [WorkOrderAssignableUserController::class, 'index']);
+
+    Route::get('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'index']);
+    Route::post('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'store']);
+    Route::delete('work-order-assignments/{workOrderAssignment}', [WorkOrderAssignmentController::class, 'destroy']);
 });

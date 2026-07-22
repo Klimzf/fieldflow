@@ -78,4 +78,12 @@ final class WorkOrder extends Model
     {
         return $this->hasMany(WorkOrderUpdate::class);
     }
+
+    /**
+     * @return HasMany<WorkOrderAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(WorkOrderAssignment::class);
+    }
 }
