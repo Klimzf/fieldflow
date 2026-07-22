@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { getValidationError } from '@/shared/api/errors'
 import { WORK_ORDER_STATUS_LABELS, WORK_ORDER_STATUSES } from '@/shared/constants/work-orders'
+import { useWorkOrderAssignmentsStore } from '@/stores/work-order-assignments'
 import { useWorkOrderUpdatesStore } from '@/stores/work-order-updates'
 import { useWorkOrdersStore } from '@/stores/work-orders'
 import type { WorkOrderStatus } from '@/shared/types/work-order'
@@ -11,12 +12,14 @@ import type { WorkOrderUpdate } from '@/shared/types/work-order-update'
 const route = useRoute()
 const workOrdersStore = useWorkOrdersStore()
 const updatesStore = useWorkOrderUpdatesStore()
+const assignmentsStore = useWorkOrderAssignmentsStore()
 
 const clientId = computed(() => Number(route.params.clientId))
 const siteId = computed(() => Number(route.params.siteId))
 const workOrderId = computed(() => Number(route.params.workOrderId))
 
 const selectedStatus = ref<WorkOrderStatus>('new')
+const selectedAssignableUserId = ref('')
 const comment = ref('')
 const error = ref<string | null>(null)
 const validationErrors = ref<string[]>([])
@@ -27,6 +30,8 @@ onMounted(async () => {
   await Promise.all([
     workOrdersStore.fetchWorkOrder(workOrderId.value),
     updatesStore.fetchUpdates(workOrderId.value),
+    assignmentsStore.fetchAssignments(workOrderId.value),
+    assignmentsStore.fetchAssignableUsers(workOrderId.value),
   ])
 
   if (workOrdersStore.currentWorkOrder !== null) {
@@ -49,16 +54,7 @@ async function updateStatus(): Promise<void> {
 
     await updatesStore.fetchUpdates(workOrderId.value)
   } catch (exception: unknown) {
-    const validationError = getValidationError(exception)
-
-    if (validationError !== null) {
-      error.value = validationError.message
-      validationErrors.value = validationError.errors
-
-      return
-    }
-
-    error.value = 'Не удалось изменить статус заявки. Попробуйте позже.'
+    handleError(exception, 'Не удалось изменить статус заявки. Попробуйте позже.')
   }
 }
 
@@ -73,17 +69,51 @@ async function submitComment(): Promise<void> {
 
     comment.value = ''
   } catch (exception: unknown) {
-    const validationError = getValidationError(exception)
-
-    if (validationError !== null) {
-      error.value = validationError.message
-      validationErrors.value = validationError.errors
-
-      return
-    }
-
-    error.value = 'Не удалось добавить комментарий. Попробуйте позже.'
+    handleError(exception, 'Не удалось добавить комментарий. Попробуйте позже.')
   }
+}
+
+async function assignUser(): Promise<void> {
+  if (selectedAssignableUserId.value === '') {
+    return
+  }
+
+  error.value = null
+  validationErrors.value = []
+
+  try {
+    await assignmentsStore.createAssignment(workOrderId.value, {
+      user_id: Number(selectedAssignableUserId.value),
+    })
+
+    selectedAssignableUserId.value = ''
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось назначить пользователя. Попробуйте позже.')
+  }
+}
+
+async function removeAssignment(assignmentId: number): Promise<void> {
+  error.value = null
+  validationErrors.value = []
+
+  try {
+    await assignmentsStore.deleteAssignment(assignmentId)
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось снять назначение. Попробуйте позже.')
+  }
+}
+
+function handleError(exception: unknown, fallbackMessage: string): void {
+  const validationError = getValidationError(exception)
+
+  if (validationError !== null) {
+    error.value = validationError.message
+    validationErrors.value = validationError.errors
+
+    return
+  }
+
+  error.value = fallbackMessage
 }
 
 function formatUpdate(update: WorkOrderUpdate): string {
@@ -156,6 +186,63 @@ function formatStatus(status: string | null): string {
           </button>
         </div>
       </template>
+    </section>
+
+    <section class="card">
+      <h2>Назначения</h2>
+
+      <p v-if="assignmentsStore.loading">Загрузка назначений...</p>
+
+      <div v-else-if="assignmentsStore.assignments.length === 0" class="empty-state">
+        <p>Пока никто не назначен на заявку.</p>
+      </div>
+
+      <div v-else class="organization-list">
+        <article
+          v-for="assignment in assignmentsStore.assignments"
+          :key="assignment.id"
+          class="organization-item"
+        >
+          <div>
+            <h3>{{ assignment.user?.name ?? 'Пользователь' }}</h3>
+            <p v-if="assignment.user?.email">{{ assignment.user.email }}</p>
+            <p v-if="assignment.assigned_by">Назначил: {{ assignment.assigned_by.name }}</p>
+            <p v-if="assignment.created_at">Дата назначения: {{ assignment.created_at }}</p>
+          </div>
+
+          <button
+            type="button"
+            :disabled="assignmentsStore.loading"
+            @click="removeAssignment(assignment.id)"
+          >
+            Снять
+          </button>
+        </article>
+      </div>
+
+      <form class="form compact-form" @submit.prevent="assignUser">
+        <label>
+          Назначить пользователя
+          <select v-model="selectedAssignableUserId" required>
+            <option value="">Выберите пользователя</option>
+
+            <option
+              v-for="user in assignmentsStore.availableAssignableUsers"
+              :key="user.id"
+              :value="String(user.id)"
+            >
+              {{ user.name }} — {{ user.email }} — {{ user.role }}
+            </option>
+          </select>
+        </label>
+
+        <button
+          type="submit"
+          :disabled="assignmentsStore.loading || selectedAssignableUserId === ''"
+        >
+          Назначить
+        </button>
+      </form>
     </section>
 
     <section class="card">
