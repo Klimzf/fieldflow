@@ -256,3 +256,74 @@ textarea {
 .timeline-item small {
   color: #64748b;
 }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.stat-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #64748b;
+}
+
+.stat-card strong {
+  font-size: 32px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.status-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.work-order-list {
+  display: grid;
+  gap: 12px;
+}
+
+.work-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+}
+
+.work-order-row:hover {
+  background: #eef2ff;
+}
+
+.work-order-row p {
+  margin: 6px 0 0;
+  color: #64748b;
+}
