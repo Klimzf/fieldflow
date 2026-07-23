@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\EquipmentController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
+use App\Http\Controllers\Api\OrganizationMemberController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\WorkOrderAssignableUserController;
 use App\Http\Controllers\Api\WorkOrderAssignmentController;
@@ -73,4 +74,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'index']);
     Route::post('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'store']);
     Route::delete('work-order-assignments/{workOrderAssignment}', [WorkOrderAssignmentController::class, 'destroy']);
+
+    Route::get('organizations/{organization}/members', [OrganizationMemberController::class, 'index']);
+    Route::post('organizations/{organization}/members', [OrganizationMemberController::class, 'store']);
+    Route::patch('organizations/{organization}/members/{member}', [OrganizationMemberController::class, 'update']);
+    Route::delete('organizations/{organization}/members/{member}', [OrganizationMemberController::class, 'destroy']);
 });
