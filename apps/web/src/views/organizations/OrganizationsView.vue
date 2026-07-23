@@ -49,6 +49,17 @@ onMounted(async () => {
             >
               Клиенты
             </RouterLink>
+            <RouterLink
+              class="button"
+              :to="{
+                name: 'organization.members',
+                params: {
+                  organizationId: organization.id,
+                },
+              }"
+            >
+              Участники
+            </RouterLink>
 
             <button
               type="button"
