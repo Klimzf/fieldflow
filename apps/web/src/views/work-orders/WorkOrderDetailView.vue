@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { getValidationError } from '@/shared/api/errors'
 import { WORK_ORDER_STATUS_LABELS, WORK_ORDER_STATUSES } from '@/shared/constants/work-orders'
 import { useWorkOrderAssignmentsStore } from '@/stores/work-order-assignments'
+import { useWorkOrderChecklistItemsStore } from '@/stores/work-order-checklist-items'
 import { useWorkOrderUpdatesStore } from '@/stores/work-order-updates'
 import { useWorkOrdersStore } from '@/stores/work-orders'
 import type { WorkOrderStatus } from '@/shared/types/work-order'
+import type { WorkOrderChecklistItem } from '@/shared/types/work-order-checklist-item'
 import type { WorkOrderUpdate } from '@/shared/types/work-order-update'
 
 const route = useRoute()
 const workOrdersStore = useWorkOrdersStore()
 const updatesStore = useWorkOrderUpdatesStore()
 const assignmentsStore = useWorkOrderAssignmentsStore()
+const checklistStore = useWorkOrderChecklistItemsStore()
 
 const clientId = computed(() => Number(route.params.clientId))
 const siteId = computed(() => Number(route.params.siteId))
@@ -21,6 +24,11 @@ const workOrderId = computed(() => Number(route.params.workOrderId))
 const selectedStatus = ref<WorkOrderStatus>('new')
 const selectedAssignableUserId = ref('')
 const comment = ref('')
+
+const checklistForm = reactive({
+  title: '',
+})
+
 const error = ref<string | null>(null)
 const validationErrors = ref<string[]>([])
 
@@ -32,6 +40,7 @@ onMounted(async () => {
     updatesStore.fetchUpdates(workOrderId.value),
     assignmentsStore.fetchAssignments(workOrderId.value),
     assignmentsStore.fetchAssignableUsers(workOrderId.value),
+    checklistStore.fetchItems(workOrderId.value),
   ])
 
   if (workOrdersStore.currentWorkOrder !== null) {
@@ -44,8 +53,7 @@ async function updateStatus(): Promise<void> {
     return
   }
 
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     await workOrdersStore.updateWorkOrder(workOrderId.value, {
@@ -58,9 +66,44 @@ async function updateStatus(): Promise<void> {
   }
 }
 
+async function submitChecklistItem(): Promise<void> {
+  clearErrors()
+
+  try {
+    await checklistStore.createItem(workOrderId.value, {
+      title: checklistForm.title,
+    })
+
+    checklistForm.title = ''
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось добавить пункт чек-листа. Попробуйте позже.')
+  }
+}
+
+async function toggleChecklistItem(item: WorkOrderChecklistItem): Promise<void> {
+  clearErrors()
+
+  try {
+    await checklistStore.updateCompletion(item.id, {
+      is_completed: !item.is_completed,
+    })
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось обновить пункт чек-листа. Попробуйте позже.')
+  }
+}
+
+async function removeChecklistItem(itemId: number): Promise<void> {
+  clearErrors()
+
+  try {
+    await checklistStore.deleteItem(itemId)
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось удалить пункт чек-листа. Попробуйте позже.')
+  }
+}
+
 async function submitComment(): Promise<void> {
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     await updatesStore.createUpdate(workOrderId.value, {
@@ -78,8 +121,7 @@ async function assignUser(): Promise<void> {
     return
   }
 
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     await assignmentsStore.createAssignment(workOrderId.value, {
@@ -93,14 +135,18 @@ async function assignUser(): Promise<void> {
 }
 
 async function removeAssignment(assignmentId: number): Promise<void> {
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     await assignmentsStore.deleteAssignment(assignmentId)
   } catch (exception: unknown) {
     handleError(exception, 'Не удалось снять назначение. Попробуйте позже.')
   }
+}
+
+function clearErrors(): void {
+  error.value = null
+  validationErrors.value = []
 }
 
 function handleError(exception: unknown, fallbackMessage: string): void {
@@ -189,6 +235,85 @@ function formatStatus(status: string | null): string {
     </section>
 
     <section class="card">
+      <h2>Чек-лист работ</h2>
+
+      <p class="description">
+        Выполнено {{ checklistStore.completedCount }} из {{ checklistStore.totalCount }}
+      </p>
+
+      <div v-if="error" class="error">
+        <p>{{ error }}</p>
+
+        <ul v-if="validationErrors.length">
+          <li v-for="validationError in validationErrors" :key="validationError">
+            {{ validationError }}
+          </li>
+        </ul>
+      </div>
+
+      <p v-if="checklistStore.loading">Загрузка чек-листа...</p>
+
+      <div v-else-if="checklistStore.items.length === 0" class="empty-state">
+        <p>Пункты чек-листа пока не добавлены.</p>
+      </div>
+
+      <div v-else class="checklist">
+        <article
+          v-for="item in checklistStore.items"
+          :key="item.id"
+          class="checklist-item"
+          :class="{ completed: item.is_completed }"
+        >
+          <div>
+            <h3>{{ item.title }}</h3>
+
+            <p v-if="item.is_completed">
+              Выполнил:
+              {{ item.completed_by?.name ?? 'Пользователь' }}
+              <span v-if="item.completed_at"> — {{ item.completed_at }}</span>
+            </p>
+
+            <p v-else>Пункт ещё не выполнен.</p>
+          </div>
+
+          <div class="organization-actions">
+            <button
+              type="button"
+              :disabled="checklistStore.loading"
+              @click="toggleChecklistItem(item)"
+            >
+              {{ item.is_completed ? 'Вернуть' : 'Выполнено' }}
+            </button>
+
+            <button
+              type="button"
+              :disabled="checklistStore.loading"
+              @click="removeChecklistItem(item.id)"
+            >
+              Удалить
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <form class="form compact-form" @submit.prevent="submitChecklistItem">
+        <label>
+          Новый пункт
+          <input
+            v-model="checklistForm.title"
+            type="text"
+            required
+            placeholder="Например: Проверить фильтры"
+          />
+        </label>
+
+        <button type="submit" :disabled="checklistStore.loading">
+          {{ checklistStore.loading ? 'Добавление...' : 'Добавить пункт' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
       <h2>Назначения</h2>
 
       <p v-if="assignmentsStore.loading">Загрузка назначений...</p>
@@ -258,16 +383,6 @@ function formatStatus(status: string | null): string {
             placeholder="Например: Проверил оборудование на объекте"
           />
         </label>
-
-        <div v-if="error" class="error">
-          <p>{{ error }}</p>
-
-          <ul v-if="validationErrors.length">
-            <li v-for="validationError in validationErrors" :key="validationError">
-              {{ validationError }}
-            </li>
-          </ul>
-        </div>
 
         <button type="submit" :disabled="updatesStore.loading">
           {{ updatesStore.loading ? 'Добавление...' : 'Добавить комментарий' }}
