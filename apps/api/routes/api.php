@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\OrganizationMemberController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\WorkOrderAssignableUserController;
 use App\Http\Controllers\Api\WorkOrderAssignmentController;
+use App\Http\Controllers\Api\WorkOrderChecklistItemController;
 use App\Http\Controllers\Api\WorkOrderController;
 use App\Http\Controllers\Api\WorkOrderUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -82,4 +83,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('organizations/{organization}/members/{member}', [OrganizationMemberController::class, 'destroy']);
 
     Route::get('organizations/{organization}/dashboard', [OrganizationDashboardController::class, 'show']);
+
+    Route::get('work-orders/{workOrder}/checklist-items', [WorkOrderChecklistItemController::class, 'index']);
+    Route::post('work-orders/{workOrder}/checklist-items', [WorkOrderChecklistItemController::class, 'store']);
+    Route::patch('work-order-checklist-items/{workOrderChecklistItem}/completion', [WorkOrderChecklistItemController::class, 'updateCompletion']);
+    Route::delete('work-order-checklist-items/{workOrderChecklistItem}', [WorkOrderChecklistItemController::class, 'destroy']);
 });
