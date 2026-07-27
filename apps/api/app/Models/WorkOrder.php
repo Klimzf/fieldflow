@@ -94,4 +94,12 @@ final class WorkOrder extends Model
     {
         return $this->hasMany(WorkOrderChecklistItem::class);
     }
+
+    /**
+     * @return HasMany<WorkOrderFile, $this>
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(WorkOrderFile::class);
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderAssignment;
 use App\Models\WorkOrderChecklistItem;
+use App\Models\WorkOrderFile;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
@@ -98,6 +99,16 @@ final class TenantAccessService
         return WorkOrderChecklistItem::query()
             ->whereIn('organization_id', $organizationIds)
             ->whereKey($checklistItem->id)
+            ->firstOrFail();
+    }
+
+    public function findWorkOrderFileForUser(User $user, WorkOrderFile $workOrderFile): WorkOrderFile
+    {
+        $organizationIds = $this->organizationIdsForUser($user);
+
+        return WorkOrderFile::query()
+            ->whereIn('organization_id', $organizationIds)
+            ->whereKey($workOrderFile->id)
             ->firstOrFail();
     }
 
