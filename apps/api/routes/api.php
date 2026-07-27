@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\WorkOrderAssignableUserController;
 use App\Http\Controllers\Api\WorkOrderAssignmentController;
 use App\Http\Controllers\Api\WorkOrderChecklistItemController;
 use App\Http\Controllers\Api\WorkOrderController;
+use App\Http\Controllers\Api\WorkOrderFileController;
 use App\Http\Controllers\Api\WorkOrderUpdateController;
 use Illuminate\Support\Facades\Route;
 
@@ -88,4 +89,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('work-orders/{workOrder}/checklist-items', [WorkOrderChecklistItemController::class, 'store']);
     Route::patch('work-order-checklist-items/{workOrderChecklistItem}/completion', [WorkOrderChecklistItemController::class, 'updateCompletion']);
     Route::delete('work-order-checklist-items/{workOrderChecklistItem}', [WorkOrderChecklistItemController::class, 'destroy']);
+
+    Route::get('work-orders/{workOrder}/files', [WorkOrderFileController::class, 'index']);
+    Route::post('work-orders/{workOrder}/files', [WorkOrderFileController::class, 'store']);
+    Route::get('work-order-files/{workOrderFile}/download', [WorkOrderFileController::class, 'download']);
+    Route::delete('work-order-files/{workOrderFile}', [WorkOrderFileController::class, 'destroy']);
 });
