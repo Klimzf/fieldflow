@@ -356,3 +356,28 @@ textarea {
   margin: 0;
   color: #64748b;
 }
+
+.file-list {
+  display: grid;
+  gap: 12px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.file-item h3 {
+  margin: 0 0 6px;
+}
+
+.file-item p {
+  margin: 0 0 4px;
+  color: #64748b;
+}

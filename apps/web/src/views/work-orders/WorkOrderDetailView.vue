@@ -5,6 +5,7 @@ import { getValidationError } from '@/shared/api/errors'
 import { WORK_ORDER_STATUS_LABELS, WORK_ORDER_STATUSES } from '@/shared/constants/work-orders'
 import { useWorkOrderAssignmentsStore } from '@/stores/work-order-assignments'
 import { useWorkOrderChecklistItemsStore } from '@/stores/work-order-checklist-items'
+import { useWorkOrderFilesStore } from '@/stores/work-order-files'
 import { useWorkOrderUpdatesStore } from '@/stores/work-order-updates'
 import { useWorkOrdersStore } from '@/stores/work-orders'
 import type { WorkOrderStatus } from '@/shared/types/work-order'
@@ -16,6 +17,7 @@ const workOrdersStore = useWorkOrdersStore()
 const updatesStore = useWorkOrderUpdatesStore()
 const assignmentsStore = useWorkOrderAssignmentsStore()
 const checklistStore = useWorkOrderChecklistItemsStore()
+const filesStore = useWorkOrderFilesStore()
 
 const clientId = computed(() => Number(route.params.clientId))
 const siteId = computed(() => Number(route.params.siteId))
@@ -24,6 +26,8 @@ const workOrderId = computed(() => Number(route.params.workOrderId))
 const selectedStatus = ref<WorkOrderStatus>('new')
 const selectedAssignableUserId = ref('')
 const comment = ref('')
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 const checklistForm = reactive({
   title: '',
@@ -41,6 +45,7 @@ onMounted(async () => {
     assignmentsStore.fetchAssignments(workOrderId.value),
     assignmentsStore.fetchAssignableUsers(workOrderId.value),
     checklistStore.fetchItems(workOrderId.value),
+    filesStore.fetchFiles(workOrderId.value),
   ])
 
   if (workOrdersStore.currentWorkOrder !== null) {
@@ -102,6 +107,42 @@ async function removeChecklistItem(itemId: number): Promise<void> {
   }
 }
 
+function handleFileChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+
+  selectedFile.value = input.files?.item(0) ?? null
+}
+
+async function submitFile(): Promise<void> {
+  if (selectedFile.value === null) {
+    return
+  }
+
+  clearErrors()
+
+  try {
+    await filesStore.uploadFile(workOrderId.value, selectedFile.value)
+
+    selectedFile.value = null
+
+    if (fileInput.value !== null) {
+      fileInput.value.value = ''
+    }
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось загрузить файл. Попробуйте позже.')
+  }
+}
+
+async function removeFile(fileId: number): Promise<void> {
+  clearErrors()
+
+  try {
+    await filesStore.deleteFile(fileId)
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось удалить файл. Попробуйте позже.')
+  }
+}
+
 async function submitComment(): Promise<void> {
   clearErrors()
 
@@ -144,6 +185,22 @@ async function removeAssignment(assignmentId: number): Promise<void> {
   }
 }
 
+async function downloadFile(fileId: number): Promise<void> {
+  const file = filesStore.files.find((item) => item.id === fileId)
+
+  if (file === undefined) {
+    return
+  }
+
+  clearErrors()
+
+  try {
+    await filesStore.downloadFile(file)
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось скачать файл. Попробуйте позже.')
+  }
+}
+
 function clearErrors(): void {
   error.value = null
   validationErrors.value = []
@@ -183,6 +240,18 @@ function formatStatus(status: string | null): string {
 
   return WORK_ORDER_STATUS_LABELS[status as WorkOrderStatus] ?? status
 }
+
+function formatFileSize(size: number): string {
+  if (size < 1024) {
+    return `${size} B`
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
 </script>
 
 <template>
@@ -197,6 +266,18 @@ function formatStatus(status: string | null): string {
         Назад к заявкам
       </RouterLink>
     </header>
+
+    <section v-if="error" class="card">
+      <div class="error">
+        <p>{{ error }}</p>
+
+        <ul v-if="validationErrors.length">
+          <li v-for="validationError in validationErrors" :key="validationError">
+            {{ validationError }}
+          </li>
+        </ul>
+      </div>
+    </section>
 
     <section class="card">
       <p v-if="workOrdersStore.loading">Загрузка заявки...</p>
@@ -240,16 +321,6 @@ function formatStatus(status: string | null): string {
       <p class="description">
         Выполнено {{ checklistStore.completedCount }} из {{ checklistStore.totalCount }}
       </p>
-
-      <div v-if="error" class="error">
-        <p>{{ error }}</p>
-
-        <ul v-if="validationErrors.length">
-          <li v-for="validationError in validationErrors" :key="validationError">
-            {{ validationError }}
-          </li>
-        </ul>
-      </div>
 
       <p v-if="checklistStore.loading">Загрузка чек-листа...</p>
 
@@ -309,6 +380,58 @@ function formatStatus(status: string | null): string {
 
         <button type="submit" :disabled="checklistStore.loading">
           {{ checklistStore.loading ? 'Добавление...' : 'Добавить пункт' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Файлы заявки</h2>
+
+      <p class="description">
+        Можно загрузить фото, PDF или текстовый файл. Максимальный размер — 10 MB.
+      </p>
+
+      <p v-if="filesStore.loading">Загрузка файлов...</p>
+
+      <div v-else-if="filesStore.files.length === 0" class="empty-state">
+        <p>Файлы пока не добавлены.</p>
+      </div>
+
+      <div v-else class="file-list">
+        <article v-for="file in filesStore.files" :key="file.id" class="file-item">
+          <div>
+            <h3>{{ file.original_name }}</h3>
+            <p>{{ file.mime_type ?? 'unknown' }} · {{ formatFileSize(file.size) }}</p>
+            <p v-if="file.uploaded_by">Загрузил: {{ file.uploaded_by.name }}</p>
+            <p v-if="file.created_at">Дата загрузки: {{ file.created_at }}</p>
+          </div>
+
+          <div class="organization-actions">
+            <button type="button" :disabled="filesStore.loading" @click="downloadFile(file.id)">
+              Скачать
+            </button>
+
+            <button type="button" :disabled="filesStore.loading" @click="removeFile(file.id)">
+              Удалить
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <form class="form compact-form" @submit.prevent="submitFile">
+        <label>
+          Загрузить файл
+          <input
+            ref="fileInput"
+            type="file"
+            required
+            accept=".jpg,.jpeg,.png,.webp,.pdf,.txt"
+            @change="handleFileChange"
+          />
+        </label>
+
+        <button type="submit" :disabled="filesStore.loading || selectedFile === null">
+          {{ filesStore.loading ? 'Загрузка...' : 'Загрузить файл' }}
         </button>
       </form>
     </section>
