@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Client\IndexClientRequest;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Resources\ClientResource;
@@ -23,17 +24,33 @@ final class ClientController extends Controller
         private readonly TenantAccessService $tenantAccess,
     ) {}
 
-    public function index(Request $request, Organization $organization): AnonymousResourceCollection
+    public function index(IndexClientRequest $request, Organization $organization): AnonymousResourceCollection
     {
         /** @var User $user */
         $user = $request->user();
 
         $organization = $this->tenantAccess->findOrganizationForUser($user, $organization);
 
-        $clients = $organization
+        $clientsQuery = $organization
             ->clients()
             ->orderBy('name')
-            ->get();
+            ->latest();
+
+        $searchQuery = $request->searchQuery();
+
+        if ($searchQuery !== null) {
+            $clientsQuery->where(function ($query) use ($searchQuery): void {
+                $query
+                    ->where('name', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('email', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('phone', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('address', 'ilike', "%{$searchQuery}%");
+            });
+        }
+
+        $clients = $clientsQuery
+            ->paginate($request->perPage())
+            ->withQueryString();
 
         return ClientResource::collection($clients);
     }
