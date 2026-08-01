@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\WorkOrder\IndexWorkOrderRequest;
 use App\Http\Requests\WorkOrder\StoreWorkOrderRequest;
 use App\Http\Requests\WorkOrder\UpdateWorkOrderRequest;
 use App\Http\Resources\WorkOrderResource;
@@ -24,17 +25,37 @@ final class WorkOrderController extends Controller
         private readonly TenantAccessService $tenantAccess,
     ) {}
 
-    public function index(Request $request, Site $site): AnonymousResourceCollection
+    public function index(IndexWorkOrderRequest $request, Site $site): AnonymousResourceCollection
     {
         /** @var User $user */
         $user = $request->user();
 
         $site = $this->tenantAccess->findSiteForUser($user, $site);
 
-        $workOrders = $site
+        $workOrdersQuery = $site
             ->workOrders()
-            ->orderByDesc('created_at')
-            ->get();
+            ->with(['client', 'site', 'equipment'])
+            ->orderByDesc('created_at');
+
+        if ($request->searchQuery() !== null) {
+            $searchQuery = $request->searchQuery();
+
+            $workOrdersQuery->where(function ($query) use ($searchQuery): void {
+                $query
+                    ->where('title', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('description', 'ilike', "%{$searchQuery}%");
+            });
+        }
+
+        if ($request->status() !== null) {
+            $workOrdersQuery->where('status', $request->status());
+        }
+
+        if ($request->priority() !== null) {
+            $workOrdersQuery->where('priority', $request->priority());
+        }
+
+        $workOrders = $workOrdersQuery->paginate($request->perPage());
 
         return WorkOrderResource::collection($workOrders);
     }
