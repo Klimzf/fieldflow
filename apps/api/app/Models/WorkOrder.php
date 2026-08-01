@@ -15,6 +15,20 @@ final class WorkOrder extends Model
     /** @use HasFactory<WorkOrderFactory> */
     use HasFactory;
 
+    public const STATUSES = [
+        'new',
+        'in_progress',
+        'competed',
+        'cancelled',
+    ];
+
+    public const PRIORITIES = [
+        'low',
+        'medium',
+        'high',
+        'urgent',
+    ];
+
     protected $fillable = [
         'organization_id',
         'client_id',
