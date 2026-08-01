@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useOrganizationsStore } from '@/stores/organizations'
+import { ORGANIZATION_ROLE_LABELS } from '@/shared/constants/organization-roles'
 
 const organizationsStore = useOrganizationsStore()
 
@@ -39,7 +40,7 @@ onMounted(async () => {
           <div>
             <h2>{{ organization.name }}</h2>
             <p>Slug: {{ organization.slug }}</p>
-            <p>Роль: {{ organization.role }}</p>
+            <p>Роль: {{ ORGANIZATION_ROLE_LABELS[organization.role] }}</p>
           </div>
 
           <div class="organization-actions">

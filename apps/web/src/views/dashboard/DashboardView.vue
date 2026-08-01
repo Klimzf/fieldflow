@@ -17,8 +17,11 @@ const dashboardStore = useDashboardStore()
 const selectedOrganizationId = ref('')
 
 const dashboard = computed(() => dashboardStore.dashboard)
+const hasSelectedOrganization = computed(() => selectedOrganizationId.value !== '')
 
 onMounted(async () => {
+  dashboardStore.clearDashboard()
+
   await organizationsStore.fetchOrganizations()
 
   const activeOrganizationId = organizationsStore.activeOrganizationId
@@ -40,7 +43,11 @@ async function loadDashboard(): Promise<void> {
     return
   }
 
-  await dashboardStore.fetchDashboard(Number(selectedOrganizationId.value))
+  const organizationId = Number(selectedOrganizationId.value)
+
+  organizationsStore.setActiveOrganization(organizationId)
+
+  await dashboardStore.fetchDashboard(organizationId)
 }
 
 function formatStatus(status: string): string {
@@ -154,7 +161,7 @@ function workOrderLink(workOrder: WorkOrder) {
           </div>
         </article>
 
-        <article class="card">
+        <article v-if="hasSelectedOrganization" class="card">
           <h2>Быстрые действия</h2>
 
           <div class="organization-actions">

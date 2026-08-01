@@ -2,7 +2,10 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { getValidationError } from '@/shared/api/errors'
+import { canManageRole } from '@/shared/constants/organization-roles'
 import { WORK_ORDER_STATUS_LABELS, WORK_ORDER_STATUSES } from '@/shared/constants/work-orders'
+import { useAuthStore } from '@/stores/auth'
+import { useOrganizationsStore } from '@/stores/organizations'
 import { useWorkOrderAssignmentsStore } from '@/stores/work-order-assignments'
 import { useWorkOrderChecklistItemsStore } from '@/stores/work-order-checklist-items'
 import { useWorkOrderFilesStore } from '@/stores/work-order-files'
@@ -10,9 +13,12 @@ import { useWorkOrderUpdatesStore } from '@/stores/work-order-updates'
 import { useWorkOrdersStore } from '@/stores/work-orders'
 import type { WorkOrderStatus } from '@/shared/types/work-order'
 import type { WorkOrderChecklistItem } from '@/shared/types/work-order-checklist-item'
+import type { WorkOrderFile } from '@/shared/types/work-order-file'
 import type { WorkOrderUpdate } from '@/shared/types/work-order-update'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const organizationsStore = useOrganizationsStore()
 const workOrdersStore = useWorkOrdersStore()
 const updatesStore = useWorkOrderUpdatesStore()
 const assignmentsStore = useWorkOrderAssignmentsStore()
@@ -38,8 +44,19 @@ const validationErrors = ref<string[]>([])
 
 const workOrder = computed(() => workOrdersStore.currentWorkOrder)
 
+const currentUserId = computed(() => authStore.user?.id ?? null)
+
+const canManageCurrentOrganization = computed(() => {
+  if (workOrder.value === null) {
+    return false
+  }
+
+  return canManageRole(organizationsStore.organizationRole(workOrder.value.organization_id))
+})
+
 onMounted(async () => {
   await Promise.all([
+    organizationsStore.fetchOrganizations(),
     workOrdersStore.fetchWorkOrder(workOrderId.value),
     updatesStore.fetchUpdates(workOrderId.value),
     assignmentsStore.fetchAssignments(workOrderId.value),
@@ -72,6 +89,10 @@ async function updateStatus(): Promise<void> {
 }
 
 async function submitChecklistItem(): Promise<void> {
+  if (!canManageCurrentOrganization.value) {
+    return
+  }
+
   clearErrors()
 
   try {
@@ -98,6 +119,10 @@ async function toggleChecklistItem(item: WorkOrderChecklistItem): Promise<void> 
 }
 
 async function removeChecklistItem(itemId: number): Promise<void> {
+  if (!canManageCurrentOrganization.value) {
+    return
+  }
+
   clearErrors()
 
   try {
@@ -133,11 +158,31 @@ async function submitFile(): Promise<void> {
   }
 }
 
-async function removeFile(fileId: number): Promise<void> {
+async function downloadFile(fileId: number): Promise<void> {
+  const file = filesStore.files.find((item) => item.id === fileId)
+
+  if (file === undefined) {
+    return
+  }
+
   clearErrors()
 
   try {
-    await filesStore.deleteFile(fileId)
+    await filesStore.downloadFile(file)
+  } catch (exception: unknown) {
+    handleError(exception, 'Не удалось скачать файл. Попробуйте позже.')
+  }
+}
+
+async function removeFile(file: WorkOrderFile): Promise<void> {
+  if (!canDeleteFile(file)) {
+    return
+  }
+
+  clearErrors()
+
+  try {
+    await filesStore.deleteFile(file.id)
   } catch (exception: unknown) {
     handleError(exception, 'Не удалось удалить файл. Попробуйте позже.')
   }
@@ -158,7 +203,7 @@ async function submitComment(): Promise<void> {
 }
 
 async function assignUser(): Promise<void> {
-  if (selectedAssignableUserId.value === '') {
+  if (!canManageCurrentOrganization.value || selectedAssignableUserId.value === '') {
     return
   }
 
@@ -176,28 +221,16 @@ async function assignUser(): Promise<void> {
 }
 
 async function removeAssignment(assignmentId: number): Promise<void> {
-  clearErrors()
-
-  try {
-    await assignmentsStore.deleteAssignment(assignmentId)
-  } catch (exception: unknown) {
-    handleError(exception, 'Не удалось снять назначение. Попробуйте позже.')
-  }
-}
-
-async function downloadFile(fileId: number): Promise<void> {
-  const file = filesStore.files.find((item) => item.id === fileId)
-
-  if (file === undefined) {
+  if (!canManageCurrentOrganization.value) {
     return
   }
 
   clearErrors()
 
   try {
-    await filesStore.downloadFile(file)
+    await assignmentsStore.deleteAssignment(assignmentId)
   } catch (exception: unknown) {
-    handleError(exception, 'Не удалось скачать файл. Попробуйте позже.')
+    handleError(exception, 'Не удалось снять назначение. Попробуйте позже.')
   }
 }
 
@@ -251,6 +284,10 @@ function formatFileSize(size: number): string {
   }
 
   return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+function canDeleteFile(file: WorkOrderFile): boolean {
+  return file.uploaded_by_id === currentUserId.value || canManageCurrentOrganization.value
 }
 </script>
 
@@ -357,6 +394,7 @@ function formatFileSize(size: number): string {
             </button>
 
             <button
+              v-if="canManageCurrentOrganization"
               type="button"
               :disabled="checklistStore.loading"
               @click="removeChecklistItem(item.id)"
@@ -367,7 +405,11 @@ function formatFileSize(size: number): string {
         </article>
       </div>
 
-      <form class="form compact-form" @submit.prevent="submitChecklistItem">
+      <form
+        v-if="canManageCurrentOrganization"
+        class="form compact-form"
+        @submit.prevent="submitChecklistItem"
+      >
         <label>
           Новый пункт
           <input
@@ -382,6 +424,10 @@ function formatFileSize(size: number): string {
           {{ checklistStore.loading ? 'Добавление...' : 'Добавить пункт' }}
         </button>
       </form>
+
+      <p v-else class="description">
+        Ваша роль позволяет выполнять пункты чек-листа, но не создавать и не удалять их.
+      </p>
     </section>
 
     <section class="card">
@@ -411,7 +457,12 @@ function formatFileSize(size: number): string {
               Скачать
             </button>
 
-            <button type="button" :disabled="filesStore.loading" @click="removeFile(file.id)">
+            <button
+              v-if="canDeleteFile(file)"
+              type="button"
+              :disabled="filesStore.loading"
+              @click="removeFile(file)"
+            >
               Удалить
             </button>
           </div>
@@ -459,6 +510,7 @@ function formatFileSize(size: number): string {
           </div>
 
           <button
+            v-if="canManageCurrentOrganization"
             type="button"
             :disabled="assignmentsStore.loading"
             @click="removeAssignment(assignment.id)"
@@ -468,7 +520,11 @@ function formatFileSize(size: number): string {
         </article>
       </div>
 
-      <form class="form compact-form" @submit.prevent="assignUser">
+      <form
+        v-if="canManageCurrentOrganization"
+        class="form compact-form"
+        @submit.prevent="assignUser"
+      >
         <label>
           Назначить пользователя
           <select v-model="selectedAssignableUserId" required>
@@ -491,6 +547,8 @@ function formatFileSize(size: number): string {
           Назначить
         </button>
       </form>
+
+      <p v-else class="description">Ваша роль позволяет смотреть назначения, но не изменять их.</p>
     </section>
 
     <section class="card">

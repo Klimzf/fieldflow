@@ -2,23 +2,23 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { getValidationError } from '@/shared/api/errors'
+import { ORGANIZATION_ROLE_LABELS } from '@/shared/constants/organization-roles'
 import { useOrganizationMembersStore } from '@/stores/organization-members'
+import { useOrganizationsStore } from '@/stores/organizations'
 import type {
   ManageableOrganizationMemberRole,
   OrganizationMember,
-  OrganizationMemberRole,
 } from '@/shared/types/organization-member'
 
 const route = useRoute()
 const membersStore = useOrganizationMembersStore()
+const organizationsStore = useOrganizationsStore()
 
 const organizationId = computed(() => Number(route.params.organizationId))
 
-const roleLabels: Record<OrganizationMemberRole, string> = {
-  owner: 'Владелец',
-  admin: 'Администратор',
-  technician: 'Техник',
-}
+const canManageMembers = computed(() =>
+  organizationsStore.canManageOrganization(organizationId.value),
+)
 
 const manageableRoles: Array<{ value: ManageableOrganizationMemberRole; label: string }> = [
   { value: 'admin', label: 'Администратор' },
@@ -36,6 +36,7 @@ const error = ref<string | null>(null)
 const validationErrors = ref<string[]>([])
 
 onMounted(async () => {
+  await organizationsStore.fetchOrganizations()
   await loadMembers()
 })
 
@@ -50,8 +51,11 @@ async function loadMembers(): Promise<void> {
 }
 
 async function submit(): Promise<void> {
-  error.value = null
-  validationErrors.value = []
+  if (!canManageMembers.value) {
+    return
+  }
+
+  clearErrors()
 
   try {
     const member = await membersStore.addMember(organizationId.value, {
@@ -71,7 +75,7 @@ async function submit(): Promise<void> {
 }
 
 async function updateRole(member: OrganizationMember): Promise<void> {
-  if (member.role === 'owner') {
+  if (!canManageMembers.value || member.role === 'owner') {
     return
   }
 
@@ -81,8 +85,7 @@ async function updateRole(member: OrganizationMember): Promise<void> {
     return
   }
 
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     const updatedMember = await membersStore.updateMemberRole(organizationId.value, member.id, {
@@ -99,12 +102,11 @@ async function updateRole(member: OrganizationMember): Promise<void> {
 }
 
 async function removeMember(member: OrganizationMember): Promise<void> {
-  if (member.role === 'owner') {
+  if (!canManageMembers.value || member.role === 'owner') {
     return
   }
 
-  error.value = null
-  validationErrors.value = []
+  clearErrors()
 
   try {
     await membersStore.removeMember(organizationId.value, member.id)
@@ -112,6 +114,11 @@ async function removeMember(member: OrganizationMember): Promise<void> {
   } catch (exception: unknown) {
     handleError(exception, 'Не удалось удалить участника. Попробуйте позже.')
   }
+}
+
+function clearErrors(): void {
+  error.value = null
+  validationErrors.value = []
 }
 
 function handleError(exception: unknown, fallbackMessage: string): void {
@@ -139,7 +146,7 @@ function handleError(exception: unknown, fallbackMessage: string): void {
       <RouterLink :to="{ name: 'organizations' }"> Назад к организациям </RouterLink>
     </header>
 
-    <section class="card">
+    <section v-if="canManageMembers" class="card">
       <h2>Добавить участника</h2>
 
       <p class="description">
@@ -177,6 +184,13 @@ function handleError(exception: unknown, fallbackMessage: string): void {
       </form>
     </section>
 
+    <section v-else class="card">
+      <h2>Управление участниками</h2>
+      <p class="description">
+        У вашей роли нет прав добавлять, удалять или изменять участников организации.
+      </p>
+    </section>
+
     <section class="card">
       <h2>Список участников</h2>
 
@@ -191,11 +205,11 @@ function handleError(exception: unknown, fallbackMessage: string): void {
           <div>
             <h3>{{ member.name }}</h3>
             <p>{{ member.email }}</p>
-            <p>Роль: {{ roleLabels[member.role] }}</p>
+            <p>Роль: {{ ORGANIZATION_ROLE_LABELS[member.role] }}</p>
             <p v-if="member.joined_at">Добавлен: {{ member.joined_at }}</p>
           </div>
 
-          <div v-if="member.role !== 'owner'" class="organization-actions">
+          <div v-if="canManageMembers && member.role !== 'owner'" class="organization-actions">
             <select v-model="selectedRoles[member.id]">
               <option v-for="role in manageableRoles" :key="role.value" :value="role.value">
                 {{ role.label }}
@@ -215,7 +229,9 @@ function handleError(exception: unknown, fallbackMessage: string): void {
             </button>
           </div>
 
-          <p v-else class="description">Владельца нельзя изменить или удалить.</p>
+          <p v-else-if="member.role === 'owner'" class="description">
+            Владельца нельзя изменить или удалить.
+          </p>
         </article>
       </div>
     </section>
