@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Site\IndexSiteRequest;
 use App\Http\Requests\Site\StoreSiteRequest;
 use App\Http\Requests\Site\UpdateSiteRequest;
 use App\Http\Resources\SiteResource;
@@ -22,16 +23,33 @@ final class SiteController extends Controller
         private readonly TenantAccessService $tenantAccess,
     ) {}
 
-    public function index(Request $request, Client $client): AnonymousResourceCollection
+    public function index(IndexSiteRequest $request, Client $client): AnonymousResourceCollection
     {
         $user = $request->user();
 
         $client = $this->tenantAccess->findClientForUser($user, $client);
 
-        $sites = $client
+        $sitesQuery = $client
             ->sites()
             ->orderBy('name')
-            ->get();
+            ->latest();
+
+        $searchQuery = $request->searchQuery();
+
+        if ($searchQuery !== null) {
+            $sitesQuery->where(function ($query) use ($searchQuery): void {
+                $query
+                    ->where('name', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('address', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('contact_name', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('contact_phone', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('notes', 'ilike', "%{$searchQuery}%");
+            });
+        }
+
+        $sites = $sitesQuery
+            ->paginate($request->perPage())
+            ->withQueryString();
 
         return SiteResource::collection($sites);
     }
