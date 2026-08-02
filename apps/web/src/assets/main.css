@@ -394,3 +394,52 @@ textarea {
   margin: 0;
   color: #64748b;
 }
+
+.schedule-days {
+  display: grid;
+  gap: 16px;
+}
+
+.schedule-day {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.schedule-day h3 {
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.schedule-list {
+  display: grid;
+  gap: 12px;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.schedule-item h4 {
+  margin: 0 0 8px;
+}
+
+.schedule-item p {
+  margin: 0 0 4px;
+  color: #64748b;
+}
+
+.schedule-time {
+  font-weight: 700;
+  color: #0f172a !important;
+}

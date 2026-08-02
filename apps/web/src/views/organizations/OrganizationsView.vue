@@ -62,6 +62,15 @@ onMounted(async () => {
               Участники
             </RouterLink>
 
+            <RouterLink
+              :to="{
+                name: 'organization.schedule',
+                params: { organizationId: organization.id },
+              }"
+            >
+              Расписание
+            </RouterLink>
+
             <button
               type="button"
               @click="organizationsStore.setActiveOrganization(organization.id)"
