@@ -93,7 +93,7 @@ async function submit(): Promise<void> {
             <option value="">Без конкретного оборудования</option>
 
             <option
-              v-for="equipment in equipmentStore.equipmentItems"
+              v-for="equipment in equipmentStore.equipment"
               :key="equipment.id"
               :value="String(equipment.id)"
             >
