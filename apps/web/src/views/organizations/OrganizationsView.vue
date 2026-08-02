@@ -63,6 +63,7 @@ onMounted(async () => {
             </RouterLink>
 
             <RouterLink
+              class="button"
               :to="{
                 name: 'organization.schedule',
                 params: { organizationId: organization.id },
