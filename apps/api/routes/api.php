@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\OrganizationController;
 use App\Http\Controllers\Api\OrganizationDashboardController;
 use App\Http\Controllers\Api\OrganizationMemberController;
+use App\Http\Controllers\Api\OrganizationScheduleController;
 use App\Http\Controllers\Api\SiteController;
 use App\Http\Controllers\Api\WorkOrderAssignableUserController;
 use App\Http\Controllers\Api\WorkOrderAssignmentController;
@@ -84,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::delete('organizations/{organization}/members/{member}', [OrganizationMemberController::class, 'destroy']);
 
     Route::get('organizations/{organization}/dashboard', [OrganizationDashboardController::class, 'show']);
+    Route::get('organizations/{organization}/schedule', [OrganizationScheduleController::class, 'index']);
 
     Route::get('work-orders/{workOrder}/checklist-items', [WorkOrderChecklistItemController::class, 'index']);
     Route::post('work-orders/{workOrder}/checklist-items', [WorkOrderChecklistItemController::class, 'store']);
