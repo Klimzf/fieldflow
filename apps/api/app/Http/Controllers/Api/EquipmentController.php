@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Equipment\IndexEquipmentRequest;
 use App\Http\Requests\Equipment\StoreEquipmentRequest;
 use App\Http\Requests\Equipment\UpdateEquipmentRequest;
 use App\Http\Resources\EquipmentResource;
@@ -23,17 +24,35 @@ final class EquipmentController extends Controller
         private readonly TenantAccessService $tenantAccess,
     ) {}
 
-    public function index(Request $request, Site $site): AnonymousResourceCollection
+    public function index(IndexEquipmentRequest $request, Site $site): AnonymousResourceCollection
     {
         /** @var User $user */
         $user = $request->user();
 
         $site = $this->tenantAccess->findSiteForUser($user, $site);
 
-        $equipment = $site
+        $equipmentQuery = $site
             ->equipment()
             ->orderBy('name')
-            ->get();
+            ->latest();
+
+        $searchQuery = $request->searchQuery();
+
+        if ($searchQuery !== null) {
+            $equipmentQuery->where(function ($query) use ($searchQuery): void {
+                $query
+                    ->where('name', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('type', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('manufacturer', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('model', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('serial_number', 'ilike', "%{$searchQuery}%")
+                    ->orWhere('notes', 'ilike', "%{$searchQuery}%");
+            });
+        }
+
+        $equipment = $equipmentQuery
+            ->paginate($request->perPage())
+            ->withQueryString();
 
         return EquipmentResource::collection($equipment);
     }
