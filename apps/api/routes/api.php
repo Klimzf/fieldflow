@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\WorkOrderAssignmentController;
 use App\Http\Controllers\Api\WorkOrderChecklistItemController;
 use App\Http\Controllers\Api\WorkOrderController;
 use App\Http\Controllers\Api\WorkOrderFileController;
+use App\Http\Controllers\Api\WorkOrderServiceReportController;
 use App\Http\Controllers\Api\WorkOrderUpdateController;
 use Illuminate\Support\Facades\Route;
 
@@ -78,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'index']);
     Route::post('work-orders/{workOrder}/assignments', [WorkOrderAssignmentController::class, 'store']);
     Route::delete('work-order-assignments/{workOrderAssignment}', [WorkOrderAssignmentController::class, 'destroy']);
+    Route::get('work-orders/{workOrder}/service-report/download', [WorkOrderServiceReportController::class, 'download']);
 
     Route::get('organizations/{organization}/members', [OrganizationMemberController::class, 'index']);
     Route::post('organizations/{organization}/members', [OrganizationMemberController::class, 'store']);
