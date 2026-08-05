@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\OrganizationDashboardController;
 use App\Http\Controllers\Api\OrganizationMemberController;
 use App\Http\Controllers\Api\OrganizationScheduleController;
 use App\Http\Controllers\Api\SiteController;
+use App\Http\Controllers\Api\UserNotificationController;
 use App\Http\Controllers\Api\WorkOrderAssignableUserController;
 use App\Http\Controllers\Api\WorkOrderAssignmentController;
 use App\Http\Controllers\Api\WorkOrderChecklistItemController;
@@ -98,4 +99,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('work-orders/{workOrder}/files', [WorkOrderFileController::class, 'store']);
     Route::get('work-order-files/{workOrderFile}/download', [WorkOrderFileController::class, 'download']);
     Route::delete('work-order-files/{workOrderFile}', [WorkOrderFileController::class, 'destroy']);
+
+    Route::get('notifications', [UserNotificationController::class, 'index']);
+    Route::patch('notifications/read-all', [UserNotificationController::class, 'markAllAsRead']);
+    Route::patch('notifications/{userNotification}/read', [UserNotificationController::class, 'markAsRead']);
 });
