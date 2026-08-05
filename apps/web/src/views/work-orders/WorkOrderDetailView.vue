@@ -106,6 +106,16 @@ async function submitChecklistItem(): Promise<void> {
   }
 }
 
+async function downloadServiceReport(): Promise<void> {
+  clearErrors()
+
+  try {
+    await workOrdersStore.downloadServiceReport(workOrderId.value)
+  } catch {
+    error.value = 'Не удалось скачать PDF-акт. Попробуйте позже.'
+  }
+}
+
 async function toggleChecklistItem(item: WorkOrderChecklistItem): Promise<void> {
   clearErrors()
 
@@ -327,6 +337,11 @@ function canDeleteFile(file: WorkOrderFile): boolean {
         <p v-if="workOrder.equipment_id">Оборудование ID: {{ workOrder.equipment_id }}</p>
         <p v-if="workOrder.scheduled_at">Запланировано: {{ workOrder.scheduled_at }}</p>
 
+        <div class="organization-actions">
+          <button type="button" :disabled="workOrdersStore.loading" @click="downloadServiceReport">
+            Скачать акт PDF
+          </button>
+        </div>
         <div class="form compact-form">
           <label>
             Изменить статус

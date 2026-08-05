@@ -142,6 +142,24 @@ export const useWorkOrdersStore = defineStore('work-orders', () => {
     pagination.value = null
   }
 
+  async function downloadServiceReport(workOrderId: number): Promise<void> {
+    const response = await http.get(`/api/work-orders/${workOrderId}/service-report/download`, {
+      responseType: 'blob',
+    })
+
+    const url = window.URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = `service-report-work-order-${workOrderId}.pdf`
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.URL.revokeObjectURL(url)
+  }
+
   return {
     workOrders,
     currentWorkOrder,
@@ -151,6 +169,7 @@ export const useWorkOrdersStore = defineStore('work-orders', () => {
     fetchWorkOrder,
     createWorkOrder,
     updateWorkOrder,
+    downloadServiceReport,
     clearCurrentWorkOrder,
     clearWorkOrders,
   }
