@@ -14,6 +14,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\TenantAccessService;
+use App\Services\UserNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -23,6 +24,7 @@ final class WorkOrderController extends Controller
 {
     public function __construct(
         private readonly TenantAccessService $tenantAccess,
+        private readonly UserNotificationService $notification,
     ) {}
 
     public function index(IndexWorkOrderRequest $request, Site $site): AnonymousResourceCollection
@@ -89,6 +91,8 @@ final class WorkOrderController extends Controller
                 'client_id' => $site->client_id,
             ]);
 
+        $this->notification->notifyWorkOrderCreated($workOrder, $user);
+
         $workOrder->updates()->create([
             'organization_id' => $workOrder->organization_id,
             'user_id' => $user->id,
@@ -147,6 +151,8 @@ final class WorkOrderController extends Controller
                 'old_status' => $oldStatus,
                 'new_status' => $validated['status'],
             ]);
+
+            $this->notification->notifyWorkOrderStatusChanged($workOrder, $user, $oldStatus, $workOrder->status);
         }
 
         return new WorkOrderResource($workOrder->refresh());
