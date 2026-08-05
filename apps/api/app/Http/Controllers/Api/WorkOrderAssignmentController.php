@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderAssignment;
 use App\Services\TenantAccessService;
+use App\Services\UserNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -21,6 +22,7 @@ final class WorkOrderAssignmentController extends Controller
 {
     public function __construct(
         private readonly TenantAccessService $tenantAccess,
+        private readonly UserNotificationService $notification,
     ) {}
 
     public function index(Request $request, WorkOrder $workOrder): AnonymousResourceCollection
@@ -53,6 +55,12 @@ final class WorkOrderAssignmentController extends Controller
             ->users()
             ->whereKey($request->validated('user_id'))
             ->firstOrFail();
+
+        $this->notification->notifyWorkOrderAssigned(
+            $workOrder,
+            $assignedUser,
+            $user,
+        );
 
         $assignmentExists = $workOrder
             ->assignments()
