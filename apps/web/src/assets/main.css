@@ -443,3 +443,49 @@ textarea {
   font-weight: 700;
   color: #0f172a !important;
 }
+
+.compact-header {
+  margin-bottom: 16px;
+}
+
+.notification-list {
+  display: grid;
+  gap: 12px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.notification-item.unread {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.notification-item h3 {
+  margin: 0 0 8px;
+}
+
+.notification-item p {
+  margin: 0 0 4px;
+  color: #64748b;
+}
+
+.notification-meta {
+  font-size: 12px;
+  color: #475569 !important;
+}
+
+.notification-work-order {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #f8fafc;
+}

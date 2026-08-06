@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useOrganizationsStore } from '@/stores/organizations'
 import type { WorkOrder, WorkOrderStatus } from '@/shared/types/work-order'
+import LogoutButton from '@/components/LogoutButton.vue'
 
 const authStore = useAuthStore()
 const organizationsStore = useOrganizationsStore()
@@ -76,6 +77,8 @@ function workOrderLink(workOrder: WorkOrder) {
       </div>
 
       <RouterLink :to="{ name: 'organizations' }"> Организации </RouterLink>
+      <RouterLink :to="{ name: 'notifications' }"> Уведомления </RouterLink>
+      <LogoutButton />
     </header>
 
     <section v-if="organizationsStore.organizations.length === 0" class="card">
