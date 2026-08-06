@@ -16,6 +16,7 @@ import WorkOrdersView from '@/views/work-orders/WorkOrdersView.vue'
 import WorkOrderDetailView from '@/views/work-orders/WorkOrderDetailView.vue'
 import OrganizationMembersView from '@/views/organization-members/OrganizationMembersView.vue'
 import ScheduleView from '@/views/schedule/ScheduleView.vue'
+import NotificationsView from '@/views/notifications/NotificationsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -152,12 +153,20 @@ const router = createRouter({
         requiresAuth: true,
       },
     },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: NotificationsView,
+      meta: {
+        requiresAuth: true,
+      },
+    },
   ],
 })
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-
+  5
   if (!auth.initialized) {
     await auth.fetchUser()
   }
